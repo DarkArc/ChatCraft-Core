@@ -19,7 +19,6 @@ public abstract class WebSocketHandler {
         @Override
         public void onOpen(WebSocket conn, ClientHandshake handshake) {
             activeSockets.put(conn.getRemoteSocketAddress(), conn);
-            System.out.println("Accepting connection");
         }
 
         @Override
@@ -29,7 +28,6 @@ public abstract class WebSocketHandler {
 
         @Override
         public void onMessage(WebSocket conn, String message) {
-            System.out.println("Accepting message: " + message);
             process(conn.getRemoteSocketAddress(), message);
         }
 
