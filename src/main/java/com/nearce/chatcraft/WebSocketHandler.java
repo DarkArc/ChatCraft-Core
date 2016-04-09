@@ -75,7 +75,7 @@ public abstract class WebSocketHandler {
     }
 
     private void join(InetSocketAddress address, UUID identifier, JsonObject params) {
-        ChatParticipant participant = new ChatParticipant(identifier, params.getAsJsonPrimitive("name").getAsString());
+        ChatParticipant participant = new ChatParticipant(identifier, params.getAsJsonPrimitive("name").getAsString() + "*");
         participantMap.put(address, participant);
 
         clientJoin(participant, true);
