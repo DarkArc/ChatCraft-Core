@@ -1,6 +1,5 @@
 package com.nearce.chatcraft;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.java_websocket.WebSocket;
@@ -8,7 +7,6 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -26,12 +24,7 @@ public abstract class WebSocketHandler {
 
         @Override
         public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-            if (activeSockets.remove(conn.getRemoteSocketAddress()) != null) {
-                ChatParticipant participant = participantMap.remove(conn.getRemoteSocketAddress());
-                if (participant != null) {
-                    clientLeave(participant);
-                }
-            }
+            leave(conn.getRemoteSocketAddress(), new JsonObject());
         }
 
         @Override
@@ -68,32 +61,82 @@ public abstract class WebSocketHandler {
             case "join":
                 join(address, identifier, params);
                 break;
+            case "leave":
+                leave(address, params);
+                break;
             case "send":
                 sendMessage(address, params);
                 break;
-            case "leave":
-                activeSockets.get(address).close();
-                break;
+        }
+    }
+
+    private void broadcast(String message) {
+        for (WebSocket webSocket : activeSockets.values()) {
+            webSocket.send(message);
         }
     }
 
     private void join(InetSocketAddress address, UUID identifier, JsonObject params) {
         ChatParticipant participant = new ChatParticipant(identifier, params.getAsJsonPrimitive("name").getAsString());
         participantMap.put(address, participant);
-        clientJoin(participant);
+
+        clientJoin(participant, true);
+        remoteClientJoin(participant);
+    }
+
+    private void leave(InetSocketAddress address, JsonObject params) {
+        if (activeSockets.remove(address) != null) {
+            ChatParticipant participant = participantMap.remove(address);
+            if (participant != null) {
+                clientLeave(participant, true);
+                remoteClientLeave(participant);
+            }
+        }
     }
 
     private void sendMessage(InetSocketAddress address, JsonObject params) {
         ChatParticipant participant = participantMap.get(address);
         if (participant != null) {
             String message = params.getAsJsonPrimitive("message").getAsString();
-            sendMessage(participant, message);
+            clientSendMessage(participant, message);
 
-            receiveMessage(new ChatMessage(participant, message));
+            remoteClientSendMessage(new ChatMessage(participant, message));
         }
     }
 
-    public void sendMessage(ChatParticipant participant, String message) {
+    public void clientJoin(ChatParticipant participant) {
+        clientJoin(participant, false);
+    }
+
+    private void clientJoin(ChatParticipant participant, boolean remote) {
+        JsonObject requestParams = new JsonObject();
+        requestParams.addProperty("name", participant.getName());
+        requestParams.addProperty("remote", remote);
+
+        JsonObject request = new JsonObject();
+        request.addProperty("method", "join");
+        request.add("params", requestParams);
+
+        broadcast(request.toString());
+    }
+
+    public void clientLeave(ChatParticipant participant) {
+        clientLeave(participant, false);
+    }
+
+    private void clientLeave(ChatParticipant participant, boolean remote) {
+        JsonObject requestParams = new JsonObject();
+        requestParams.addProperty("name", participant.getName());
+        requestParams.addProperty("remote", remote);
+
+        JsonObject request = new JsonObject();
+        request.addProperty("method", "leave");
+        request.add("params", requestParams);
+
+        broadcast(request.toString());
+    }
+
+    public void clientSendMessage(ChatParticipant participant, String message) {
         JsonObject requestParams = new JsonObject();
         requestParams.addProperty("sender", participant.getName());
         requestParams.addProperty("message", message);
@@ -102,14 +145,12 @@ public abstract class WebSocketHandler {
         request.addProperty("method", "send");
         request.add("params", requestParams);
 
-        for (WebSocket webSocket : activeSockets.values()) {
-            webSocket.send(request.toString());
-        }
+        broadcast(request.toString());
     }
 
-    public abstract void clientJoin(ChatParticipant client);
+    public abstract void remoteClientJoin(ChatParticipant client);
 
-    public abstract void clientLeave(ChatParticipant client);
+    public abstract void remoteClientLeave(ChatParticipant client);
 
-    public abstract void receiveMessage(ChatMessage message);
+    public abstract void remoteClientSendMessage(ChatMessage message);
 }
