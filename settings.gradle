@@ -1,0 +1,3 @@
+rootProject.name = 'ChatCraftServer'
+include 'ChatCraftServer-Sponge'
+
