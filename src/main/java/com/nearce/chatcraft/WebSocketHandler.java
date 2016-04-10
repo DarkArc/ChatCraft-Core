@@ -1,5 +1,6 @@
 package com.nearce.chatcraft;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.java_websocket.WebSocket;
@@ -84,6 +85,35 @@ public abstract class WebSocketHandler {
 
         clientJoin(participant, true);
         remoteClientJoin(participant);
+
+        sendParticipants(address);
+    }
+
+    private void sendParticipants(InetSocketAddress address) {
+        JsonObject requestParams = new JsonObject();
+
+        JsonArray localParticipants = new JsonArray();
+        getLocalParticipants().stream().forEach(p -> {
+            JsonObject participant = new JsonObject();
+            participant.addProperty("name", p.getName());
+            localParticipants.add(participant);
+        });
+
+        JsonArray remoteParticipants = new JsonArray();
+        getConnectedParticipants().stream().forEach(p -> {
+            JsonObject participant = new JsonObject();
+            participant.addProperty("name", p.getName());
+            remoteParticipants.add(participant);
+        });
+
+        requestParams.add("server", localParticipants);
+        requestParams.add("remote", remoteParticipants);
+
+        JsonObject request = new JsonObject();
+        request.addProperty("method", "list");
+        request.add("params", requestParams);
+
+        activeSockets.get(address).send(request.toString());
     }
 
     private void leave(InetSocketAddress address, JsonObject params) {
@@ -149,6 +179,8 @@ public abstract class WebSocketHandler {
 
         broadcast(request.toString());
     }
+
+    public abstract List<ChatParticipant> getLocalParticipants();
 
     public abstract void remoteClientJoin(ChatParticipant client);
 

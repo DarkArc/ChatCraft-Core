@@ -22,4 +22,9 @@ public class ChatParticipant {
     public void setName(String name) {
         this.name = name;
     }
+
+    @Override
+    public boolean equals(Object object) {
+        return object instanceof ChatParticipant && ((ChatParticipant) object).getUniqueId().equals(getUniqueId());
+    }
 }

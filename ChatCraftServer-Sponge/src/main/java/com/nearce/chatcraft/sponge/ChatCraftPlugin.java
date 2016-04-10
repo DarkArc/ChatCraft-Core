@@ -17,7 +17,10 @@ import org.spongepowered.api.text.format.TextColors;
 
 import java.net.UnknownHostException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 @Plugin(id = "com.nearce.chatcraft.sponge", name = "ChatCraft", version = "1.0", description = "Chat via websockets!")
 public class ChatCraftPlugin {
@@ -28,9 +31,16 @@ public class ChatCraftPlugin {
         return webSocketHandler.getConnectedParticipants();
     }
 
+    private List<ChatParticipant> participants = new CopyOnWriteArrayList<>();
+
     @Listener
     public void onStart(GameStartedServerEvent event) throws UnknownHostException {
         webSocketHandler = new WebSocketHandler() {
+            @Override
+            public List<ChatParticipant> getLocalParticipants() {
+                return participants;
+            }
+
             @Override
             public void remoteClientJoin(ChatParticipant client) {
                 MessageChannel.TO_ALL.send(Text.of(TextColors.YELLOW, client.getName(), " has joined remote chat"));
@@ -56,6 +66,7 @@ public class ChatCraftPlugin {
     public void onPlayerJoin(ClientConnectionEvent.Join event) {
         Player player = event.getTargetEntity();
         ChatParticipant participant = new ChatParticipant(player.getUniqueId(), player.getName());
+        participants.add(participant);
         webSocketHandler.clientJoin(participant);
     }
 
@@ -63,6 +74,7 @@ public class ChatCraftPlugin {
     public void onPlayerLeave(ClientConnectionEvent.Disconnect event) {
         Player player = event.getTargetEntity();
         ChatParticipant participant = new ChatParticipant(player.getUniqueId(), player.getName());
+        participants.remove(participant);
         webSocketHandler.clientLeave(participant);
     }
 
