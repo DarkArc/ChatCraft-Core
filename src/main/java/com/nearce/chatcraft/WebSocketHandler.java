@@ -48,6 +48,10 @@ public abstract class WebSocketHandler {
         server.stop();
     }
 
+    public Collection<ChatParticipant> getConnectedParticipants() {
+        return participantMap.values();
+    }
+
     private void process(InetSocketAddress address, String message) {
         JsonObject object = new JsonParser().parse(message).getAsJsonObject();
 

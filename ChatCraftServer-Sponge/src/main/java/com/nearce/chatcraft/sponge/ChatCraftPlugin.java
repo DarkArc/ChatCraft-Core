@@ -2,8 +2,11 @@ package com.nearce.chatcraft.sponge;
 import com.nearce.chatcraft.ChatMessage;
 import com.nearce.chatcraft.ChatParticipant;
 import com.nearce.chatcraft.WebSocketHandler;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.game.state.GameStartingServerEvent;
 import org.spongepowered.api.event.message.MessageChannelEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
@@ -13,15 +16,20 @@ import org.spongepowered.api.text.channel.MessageChannel;
 import org.spongepowered.api.text.format.TextColors;
 
 import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.Optional;
 
 @Plugin(id = "com.nearce.chatcraft.sponge", name = "ChatCraft", version = "1.0", description = "Chat via websockets!")
 public class ChatCraftPlugin {
 
-    private WebSocketHandler webSocketHandler;
+    private static WebSocketHandler webSocketHandler;
+
+    public static Collection<ChatParticipant> getConnectedParticipants() {
+        return webSocketHandler.getConnectedParticipants();
+    }
 
     @Listener
-    public void onStart(GameStartingServerEvent event) throws UnknownHostException {
+    public void onStart(GameStartedServerEvent event) throws UnknownHostException {
         webSocketHandler = new WebSocketHandler() {
             @Override
             public void remoteClientJoin(ChatParticipant client) {
@@ -39,24 +47,27 @@ public class ChatCraftPlugin {
             }
         };
         webSocketHandler.start();
+
+        Sponge.getCommandManager().removeMapping(Sponge.getCommandManager().get("list").get());
+        Sponge.getCommandManager().register(this, ChatCraftListCommand.aquireSpec(), "list");
     }
 
     @Listener
-    public void onPlayerChat(ClientConnectionEvent.Join event) {
+    public void onPlayerJoin(ClientConnectionEvent.Join event) {
         Player player = event.getTargetEntity();
         ChatParticipant participant = new ChatParticipant(player.getUniqueId(), player.getName());
         webSocketHandler.clientJoin(participant);
     }
 
     @Listener
-    public void onPlayerChat(ClientConnectionEvent.Disconnect event) {
+    public void onPlayerLeave(ClientConnectionEvent.Disconnect event) {
         Player player = event.getTargetEntity();
         ChatParticipant participant = new ChatParticipant(player.getUniqueId(), player.getName());
         webSocketHandler.clientLeave(participant);
     }
 
     @Listener
-    public void onPlayerChat(MessageChannelEvent.Chat event) {
+    public void onUserChat(MessageChannelEvent.Chat event) {
         String message = event.getRawMessage().toPlain();
         Optional<Player> optSender= event.getCause().first(Player.class);
         if (optSender.isPresent()) {
