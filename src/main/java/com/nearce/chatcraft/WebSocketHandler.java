@@ -82,7 +82,16 @@ public class WebSocketHandler {
     }
 
     private void join(InetSocketAddress address, UUID identifier, JsonObject params) {
-        ChatParticipant participant = new ChatParticipant(identifier, params.getAsJsonPrimitive("name").getAsString() + "*");
+        // TODO Name claiming
+        String name = gameServer.sanitize(params.getAsJsonPrimitive("name").getAsString());
+
+        // If the name is not valid, close their connection
+        if (name.isEmpty()) {
+            activeSockets.remove(address).close();
+            return;
+        }
+
+        ChatParticipant participant = new ChatParticipant(identifier, name + "*");
         participantMap.put(address, participant);
 
         clientJoin(participant, true);
