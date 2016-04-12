@@ -4,8 +4,12 @@ import com.nearce.chatcraft.ChatParticipant;
 import com.nearce.chatcraft.GameServer;
 import com.nearce.chatcraft.WebSocketHandler;
 import org.spongepowered.api.Sponge;
+import org.spongepowered.api.entity.living.Living;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
+import org.spongepowered.api.event.Order;
+import org.spongepowered.api.event.achievement.GrantAchievementEvent;
+import org.spongepowered.api.event.entity.DestructEntityEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.message.MessageChannelEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
@@ -60,7 +64,7 @@ public class ChatCraftPlugin {
         Sponge.getCommandManager().register(this, ChatCraftListCommand.aquireSpec(), "list");
     }
 
-    @Listener
+    @Listener(order = Order.POST)
     public void onPlayerJoin(ClientConnectionEvent.Join event) {
         Player player = event.getTargetEntity();
         ChatParticipant participant = new ChatParticipant(player.getUniqueId(), player.getName());
@@ -68,7 +72,7 @@ public class ChatCraftPlugin {
         webSocketHandler.clientJoin(participant);
     }
 
-    @Listener
+    @Listener(order = Order.POST)
     public void onPlayerLeave(ClientConnectionEvent.Disconnect event) {
         Player player = event.getTargetEntity();
         ChatParticipant participant = new ChatParticipant(player.getUniqueId(), player.getName());
@@ -76,7 +80,7 @@ public class ChatCraftPlugin {
         webSocketHandler.clientLeave(participant);
     }
 
-    @Listener
+    @Listener(order = Order.POST)
     public void onUserChat(MessageChannelEvent.Chat event) {
         String message = event.getRawMessage().toPlain();
         Optional<Player> optSender= event.getCause().first(Player.class);
@@ -85,5 +89,18 @@ public class ChatCraftPlugin {
             ChatParticipant participant = new ChatParticipant(sender.getUniqueId(), sender.getName());
             webSocketHandler.clientSendMessage(participant, message);
         }
+    }
+
+    @Listener(order = Order.POST)
+    public void onUserDeath(DestructEntityEvent.Death event) {
+        Living target = event.getTargetEntity();
+        if (target instanceof Player) {
+            webSocketHandler.systemMessage(event.getMessage().toString());
+        }
+    }
+
+    @Listener(order = Order.POST)
+    public void onAchievementGrant(GrantAchievementEvent.TargetPlayer event) {
+        webSocketHandler.systemMessage(event.getMessage().toString());
     }
 }
