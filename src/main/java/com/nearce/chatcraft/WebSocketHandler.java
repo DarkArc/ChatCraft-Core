@@ -131,7 +131,11 @@ public class WebSocketHandler {
     private void sendMessage(InetSocketAddress address, JsonObject params) {
         ChatParticipant participant = participantMap.get(address);
         if (participant != null) {
-            String message = params.getAsJsonPrimitive("message").getAsString();
+            String message = gameServer.sanitize(params.getAsJsonPrimitive("message").getAsString()).trim();
+            if (message.isEmpty()) {
+                return;
+            }
+
             clientSendMessage(participant, message);
 
             gameServer.remoteClientSendMessage(new ChatMessage(participant, message));

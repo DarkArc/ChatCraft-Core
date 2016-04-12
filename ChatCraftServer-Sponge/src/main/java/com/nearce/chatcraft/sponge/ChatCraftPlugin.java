@@ -44,6 +44,11 @@ public class ChatCraftPlugin {
             }
 
             @Override
+            public String sanitize(String input) {
+                return input.replaceAll("[^\\x00-\\x80]", "");
+            }
+
+            @Override
             public void remoteClientJoin(ChatParticipant client) {
                 MessageChannel.TO_ALL.send(Text.of(TextColors.YELLOW, client.getName(), " has joined remote chat"));
             }
