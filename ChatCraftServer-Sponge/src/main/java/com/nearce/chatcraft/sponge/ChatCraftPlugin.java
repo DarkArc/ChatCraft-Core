@@ -100,12 +100,12 @@ public class ChatCraftPlugin {
     public void onUserDeath(DestructEntityEvent.Death event) {
         Living target = event.getTargetEntity();
         if (target instanceof Player) {
-            webSocketHandler.systemMessage(event.getMessage().toString());
+            webSocketHandler.systemMessage(event.getMessage().toPlain());
         }
     }
 
     @Listener(order = Order.POST)
     public void onAchievementGrant(GrantAchievementEvent.TargetPlayer event) {
-        webSocketHandler.systemMessage(event.getMessage().toString());
+        webSocketHandler.systemMessage(event.getMessage().toPlain());
     }
 }
