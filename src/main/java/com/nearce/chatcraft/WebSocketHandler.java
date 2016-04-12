@@ -12,7 +12,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 
-public abstract class WebSocketHandler {
+public class WebSocketHandler {
     private Map<InetSocketAddress, WebSocket> activeSockets = new HashMap<>();
     private Map<InetSocketAddress, ChatParticipant> participantMap = new HashMap<>();
 
@@ -37,8 +37,10 @@ public abstract class WebSocketHandler {
 
         }
     };
+    private GameServer gameServer;
 
-    public WebSocketHandler() throws UnknownHostException {
+    public WebSocketHandler(GameServer gameServer) throws UnknownHostException {
+        this.gameServer = gameServer;
     }
 
     public void start() {
@@ -73,9 +75,9 @@ public abstract class WebSocketHandler {
         }
     }
 
-    private void broadcast(String message) {
+    private void sendToRemoteClients(JsonObject message) {
         for (WebSocket webSocket : activeSockets.values()) {
-            webSocket.send(message);
+            webSocket.send(message.toString());
         }
     }
 
@@ -84,7 +86,7 @@ public abstract class WebSocketHandler {
         participantMap.put(address, participant);
 
         clientJoin(participant, true);
-        remoteClientJoin(participant);
+        gameServer.remoteClientJoin(participant);
 
         sendParticipants(address);
     }
@@ -93,7 +95,7 @@ public abstract class WebSocketHandler {
         JsonObject requestParams = new JsonObject();
 
         JsonArray localParticipants = new JsonArray();
-        getLocalParticipants().stream().forEach(p -> {
+        gameServer.getLocalParticipants().stream().forEach(p -> {
             JsonObject participant = new JsonObject();
             participant.addProperty("name", p.getName());
             localParticipants.add(participant);
@@ -121,7 +123,7 @@ public abstract class WebSocketHandler {
             ChatParticipant participant = participantMap.remove(address);
             if (participant != null) {
                 clientLeave(participant, true);
-                remoteClientLeave(participant);
+                gameServer.remoteClientLeave(participant);
             }
         }
     }
@@ -132,8 +134,19 @@ public abstract class WebSocketHandler {
             String message = params.getAsJsonPrimitive("message").getAsString();
             clientSendMessage(participant, message);
 
-            remoteClientSendMessage(new ChatMessage(participant, message));
+            gameServer.remoteClientSendMessage(new ChatMessage(participant, message));
         }
+    }
+
+    public void systemMessage(String message) {
+        JsonObject requestParams = new JsonObject();
+        requestParams.addProperty("message", message);
+
+        JsonObject request = new JsonObject();
+        request.addProperty("method", "ssend");
+        request.add("params", requestParams);
+
+        sendToRemoteClients(request);
     }
 
     public void clientJoin(ChatParticipant participant) {
@@ -149,7 +162,7 @@ public abstract class WebSocketHandler {
         request.addProperty("method", "join");
         request.add("params", requestParams);
 
-        broadcast(request.toString());
+        sendToRemoteClients(request);
     }
 
     public void clientLeave(ChatParticipant participant) {
@@ -165,7 +178,7 @@ public abstract class WebSocketHandler {
         request.addProperty("method", "leave");
         request.add("params", requestParams);
 
-        broadcast(request.toString());
+        sendToRemoteClients(request);
     }
 
     public void clientSendMessage(ChatParticipant participant, String message) {
@@ -177,14 +190,6 @@ public abstract class WebSocketHandler {
         request.addProperty("method", "send");
         request.add("params", requestParams);
 
-        broadcast(request.toString());
+        sendToRemoteClients(request);
     }
-
-    public abstract List<ChatParticipant> getLocalParticipants();
-
-    public abstract void remoteClientJoin(ChatParticipant client);
-
-    public abstract void remoteClientLeave(ChatParticipant client);
-
-    public abstract void remoteClientSendMessage(ChatMessage message);
 }
