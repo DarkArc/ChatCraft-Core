@@ -9,7 +9,11 @@ import java.util.Collections;
 import java.util.List;
 
 public class ChatCraftStandalone {
-    public static void main(String[] args) throws UnknownHostException {
+    public static void main(String[] args) throws UnknownHostException, InterruptedException {
+        new ChatCraftStandalone().main();
+    }
+
+    private void main() throws UnknownHostException, InterruptedException {
         WebSocketHandler webSocketHandler = new WebSocketHandler(new GameServer() {
             @Override
             public List<ChatParticipant> getLocalParticipants() {
@@ -36,6 +40,10 @@ public class ChatCraftStandalone {
                 System.out.println("<" + message.getSender().getName() + "> " + message.getMessage());
             }
         });
-        webSocketHandler.start();
+
+        Thread thread = new Thread(webSocketHandler);
+        thread.start();
+
+        thread.join();
     }
 }

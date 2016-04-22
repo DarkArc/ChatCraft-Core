@@ -12,43 +12,35 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 
-public class WebSocketHandler {
+public class WebSocketHandler extends WebSocketServer {
     private Map<InetSocketAddress, WebSocket> activeSockets = new HashMap<>();
     private Map<InetSocketAddress, ChatParticipant> participantMap = new HashMap<>();
 
-    private WebSocketServer server = new WebSocketServer(new InetSocketAddress(8080)) {
-        @Override
-        public void onOpen(WebSocket conn, ClientHandshake handshake) {
-            activeSockets.put(conn.getRemoteSocketAddress(), conn);
-        }
-
-        @Override
-        public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-            leave(conn.getRemoteSocketAddress(), new JsonObject());
-        }
-
-        @Override
-        public void onMessage(WebSocket conn, String message) {
-            process(conn.getRemoteSocketAddress(), message);
-        }
-
-        @Override
-        public void onError(WebSocket conn, Exception ex) {
-
-        }
-    };
     private GameServer gameServer;
 
     public WebSocketHandler(GameServer gameServer) throws UnknownHostException {
+        super(new InetSocketAddress(8080));
         this.gameServer = gameServer;
     }
 
-    public void start() {
-        server.start();
+    @Override
+    public void onOpen(WebSocket conn, ClientHandshake handshake) {
+        activeSockets.put(conn.getRemoteSocketAddress(), conn);
     }
 
-    public void stop() throws IOException, InterruptedException {
-        server.stop();
+    @Override
+    public void onClose(WebSocket conn, int code, String reason, boolean remote) {
+        leave(conn.getRemoteSocketAddress(), new JsonObject());
+    }
+
+    @Override
+    public void onMessage(WebSocket conn, String message) {
+        process(conn.getRemoteSocketAddress(), message);
+    }
+
+    @Override
+    public void onError(WebSocket conn, Exception ex) {
+
     }
 
     public Collection<ChatParticipant> getConnectedParticipants() {
