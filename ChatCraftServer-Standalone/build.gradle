@@ -20,15 +20,16 @@ targetCompatibility = JavaVersion.VERSION_1_8
 
 repositories {
     mavenCentral()
-    maven {
-        name 'Sponge maven repo'
-        url 'http://repo.spongepowered.org/maven'
-    }
 }
 
 dependencies {
     compile rootProject
-    compile group: 'org.spongepowered', name: 'spongeapi', version: '4.+'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.nearce.chatcraft.standalone.ChatCraftStandalone'
+    }
 }
 
 shadowJar {
