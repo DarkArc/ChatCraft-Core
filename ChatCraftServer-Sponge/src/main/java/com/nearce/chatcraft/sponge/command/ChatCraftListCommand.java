@@ -1,6 +1,7 @@
-package com.nearce.chatcraft.sponge;
+package com.nearce.chatcraft.sponge.command;
 
 import com.nearce.chatcraft.ChatParticipant;
+import com.nearce.chatcraft.sponge.ChatCraftPlugin;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
@@ -22,7 +23,7 @@ public class ChatCraftListCommand implements CommandExecutor {
         src.sendMessage(Text.of("There are ", players.size(), "/", Sponge.getServer().getMaxPlayers(), " online:"));
         src.sendMessage(Text.of(String.join(", ", players.stream().map(User::getName).collect(Collectors.toList()))));
 
-        Collection<ChatParticipant> participants = ChatCraftPlugin.getConnectedParticipants();
+        Collection<ChatParticipant> participants = ChatCraftPlugin.inst().getConnectedParticipants();
         src.sendMessage(Text.of("There are ", participants.size(), " remote chat users:"));
         src.sendMessage(Text.of(String.join(", ", participants.stream().map(ChatParticipant::getName).collect(Collectors.toList()))));
 

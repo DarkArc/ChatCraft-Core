@@ -7,7 +7,6 @@ import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.*;
@@ -68,28 +67,43 @@ public class WebSocketHandler extends WebSocketServer {
     }
 
     private void sendToRemoteClients(JsonObject message) {
-        for (WebSocket webSocket : activeSockets.values()) {
-            webSocket.send(message.toString());
+        for (InetSocketAddress address : participantMap.keySet()) {
+            activeSockets.get(address).send(message.toString());
         }
     }
 
     private void join(InetSocketAddress address, UUID identifier, JsonObject params) {
-        // TODO Name claiming
-        String name = gameServer.sanitize(params.getAsJsonPrimitive("name").getAsString());
+        String requestedName = gameServer.sanitize(params.getAsJsonPrimitive("name").getAsString());
 
         // If the name is not valid, close their connection
-        if (name.isEmpty()) {
+        if (requestedName.isEmpty()) {
             activeSockets.remove(address).close();
             return;
         }
 
-        ChatParticipant participant = new ChatParticipant(identifier, name + "*");
-        participantMap.put(address, participant);
+        gameServer.joinWhenLegal(
+                requestedName,
+                identifier,
+                (code) -> {
+                    JsonObject requestParams = new JsonObject();
+                    requestParams.addProperty("code", code);
 
-        clientJoin(participant, true);
-        gameServer.remoteClientJoin(participant);
+                    JsonObject request = new JsonObject();
+                    request.addProperty("method", "verify");
+                    request.add("params", requestParams);
 
-        sendParticipants(address);
+                    activeSockets.get(address).send(request.toString());
+                },
+                (name) -> {
+                    ChatParticipant participant = new ChatParticipant(identifier, name);
+                    participantMap.put(address, participant);
+
+                    clientJoin(participant, true);
+                    gameServer.remoteClientJoin(participant);
+
+                    sendParticipants(address);
+                }
+        );
     }
 
     private void sendParticipants(InetSocketAddress address) {

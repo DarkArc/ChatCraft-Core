@@ -7,6 +7,8 @@ import com.nearce.chatcraft.WebSocketHandler;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
 
 public class ChatCraftStandalone {
     public static void main(String[] args) throws UnknownHostException, InterruptedException {
@@ -23,6 +25,11 @@ public class ChatCraftStandalone {
             @Override
             public String sanitize(String input) {
                 return input.replaceAll("[^\\x00-\\x80]", "");
+            }
+
+            @Override
+            public void joinWhenLegal(String name, UUID clientID, Consumer<String> verification, Consumer<String> join) {
+                join.accept(name);
             }
 
             @Override
