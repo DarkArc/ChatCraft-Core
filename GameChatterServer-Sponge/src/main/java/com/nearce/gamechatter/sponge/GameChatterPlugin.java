@@ -14,6 +14,7 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.plugin.Plugin;
+import org.spongepowered.api.text.Text;
 
 import java.net.UnknownHostException;
 import java.util.Collection;
@@ -40,6 +41,10 @@ public class GameChatterPlugin {
 
     public SpongeGameServer getGameServer() {
         return gameServer;
+    }
+
+    public void sendSystemMessage(String message) {
+        webSocketHandler.systemMessage(message);
     }
 
     @Listener
