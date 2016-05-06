@@ -1,3 +1,4 @@
-rootProject.name = 'ChatCraftServer'
-include 'ChatCraftServer-Sponge'
-include 'ChatCraftServer-Standalone'
+rootProject.name = 'GameChatterServer'
+include 'GameChatterServer-Core'
+include 'GameChatterServer-Sponge'
+include 'GameChatterServer-Standalone'

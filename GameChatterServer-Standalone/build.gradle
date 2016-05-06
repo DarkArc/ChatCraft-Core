@@ -1,0 +1,47 @@
+group 'ChatCraftServer'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.3'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'maven'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile project(':GameChatterServer-Core')
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.nearce.gamechatter.standalone.ChatCraftStandalone'
+    }
+}
+
+shadowJar {
+    dependencies {
+        include(dependency(':GameChatterServer-Core'))
+        include(dependency('com.google.code.gson:gson:2.6.2'))
+        include(dependency('org.java-websocket:Java-WebSocket:1.3.0'))
+    }
+
+    relocate('com.google.gson', 'com.nearce.gamechatter.standalone.internal.gson')
+    relocate('org.java-websocket', 'com.nearce.gamechatter.standalone.internal.websocket')
+
+}
+
+build.dependsOn(shadowJar)

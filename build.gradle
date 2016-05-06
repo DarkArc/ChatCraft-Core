@@ -1,18 +1,7 @@
-group 'ChatCraftServer'
+group 'GameChatterServer'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    compile 'com.google.code.gson:gson:2.6.2'
-    compile 'org.java-websocket:Java-WebSocket:1.3.0'
-    testCompile group: 'junit', name: 'junit', version: '4.11'
-}
-
