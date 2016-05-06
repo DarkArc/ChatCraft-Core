@@ -18,7 +18,7 @@ import org.spongepowered.api.plugin.Plugin;
 import java.net.UnknownHostException;
 import java.util.Collection;
 
-@Plugin(id = "com.nearce.gamechatter.sponge", name = "ChatCraft", version = "1.0", description = "Chat via websockets!")
+@Plugin(id = "gamechatter", name = "Game Chatter", version = "1.0", description = "Chat via websockets!")
 public class ChatCraftPlugin {
     private static ChatCraftPlugin inst;
 
