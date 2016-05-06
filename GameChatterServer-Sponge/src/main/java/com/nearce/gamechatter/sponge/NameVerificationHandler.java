@@ -25,7 +25,7 @@ public class NameVerificationHandler implements Runnable {
     private Map<String, NameVerificationSession> codeMap = new HashMap<>();
 
     public NameVerificationHandler() {
-        Task.builder().execute(this).interval(5, TimeUnit.MINUTES).submit(ChatCraftPlugin.inst());
+        Task.builder().execute(this).interval(5, TimeUnit.MINUTES).submit(GameChatterPlugin.inst());
     }
 
     public Optional<String> getVerifiedName(String name, UUID clientID) {

@@ -9,7 +9,7 @@ package com.nearce.gamechatter.db;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.nearce.gamechatter.sponge.ChatCraftPlugin;
+import com.nearce.gamechatter.sponge.GameChatterPlugin;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.ConfigManager;
 
@@ -23,7 +23,7 @@ public class DatabaseConfigLoader {
 
     private Path getDatabaseFile() throws IOException {
         ConfigManager service = Sponge.getGame().getConfigManager();
-        Path path = service.getPluginConfig(ChatCraftPlugin.inst()).getDirectory();
+        Path path = service.getPluginConfig(GameChatterPlugin.inst()).getDirectory();
         return path.resolve("database.json");
     }
 

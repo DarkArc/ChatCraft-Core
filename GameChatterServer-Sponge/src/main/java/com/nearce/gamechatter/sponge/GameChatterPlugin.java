@@ -8,8 +8,8 @@ package com.nearce.gamechatter.sponge;
 import com.nearce.gamechatter.ChatParticipant;
 import com.nearce.gamechatter.WebSocketHandler;
 import com.nearce.gamechatter.db.DatabaseConfigLoader;
-import com.nearce.gamechatter.sponge.command.ChatCraftListCommand;
-import com.nearce.gamechatter.sponge.command.ChatCraftVerifyCommand;
+import com.nearce.gamechatter.sponge.command.GameChatterListCommand;
+import com.nearce.gamechatter.sponge.command.GameChatterVerifyCommand;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
@@ -19,14 +19,14 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 
 @Plugin(id = "gamechatter", name = "Game Chatter", version = "1.0", description = "Chat via websockets!")
-public class ChatCraftPlugin {
-    private static ChatCraftPlugin inst;
+public class GameChatterPlugin {
+    private static GameChatterPlugin inst;
 
-    public ChatCraftPlugin() {
+    public GameChatterPlugin() {
         inst = this;
     }
 
-    public static ChatCraftPlugin inst() {
+    public static GameChatterPlugin inst() {
         return inst;
     }
 
@@ -57,7 +57,7 @@ public class ChatCraftPlugin {
         Sponge.getEventManager().registerListeners(this, integrationListener);
 
         Sponge.getCommandManager().removeMapping(Sponge.getCommandManager().get("list").get());
-        Sponge.getCommandManager().register(this, ChatCraftListCommand.aquireSpec(), "list");
-        Sponge.getCommandManager().register(this, ChatCraftVerifyCommand.aquireSpec(), "verifyremotechat", "vrc");
+        Sponge.getCommandManager().register(this, GameChatterListCommand.aquireSpec(), "list");
+        Sponge.getCommandManager().register(this, GameChatterVerifyCommand.aquireSpec(), "verifyremotechat", "vrc");
     }
 }

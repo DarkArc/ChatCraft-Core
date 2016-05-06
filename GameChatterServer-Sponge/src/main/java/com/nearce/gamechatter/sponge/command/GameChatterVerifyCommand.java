@@ -6,7 +6,7 @@
 
 package com.nearce.gamechatter.sponge.command;
 
-import com.nearce.gamechatter.sponge.ChatCraftPlugin;
+import com.nearce.gamechatter.sponge.GameChatterPlugin;
 import com.nearce.gamechatter.sponge.NameVerificationHandler;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
@@ -19,11 +19,11 @@ import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
-public class ChatCraftVerifyCommand implements CommandExecutor {
+public class GameChatterVerifyCommand implements CommandExecutor {
     @Override
     public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
         if (src instanceof User) {
-            NameVerificationHandler handler = ChatCraftPlugin.inst().getGameServer().getNameVerificationHandler();
+            NameVerificationHandler handler = GameChatterPlugin.inst().getGameServer().getNameVerificationHandler();
             if (handler.tryAttempt(args.<String>getOne("auth code").get(), (User) src)) {
                 src.sendMessage(Text.of(TextColors.YELLOW, "Successfully identified!"));
             } else {
@@ -38,6 +38,6 @@ public class ChatCraftVerifyCommand implements CommandExecutor {
         return CommandSpec.builder()
                 .description(Text.of("Verify your account"))
                 .arguments(GenericArguments.string(Text.of("auth code")))
-                .executor(new ChatCraftVerifyCommand()).build();
+                .executor(new GameChatterVerifyCommand()).build();
     }
 }
