@@ -1,7 +1,7 @@
 import org.jooq.util.GenerationTool
 import javax.xml.bind.JAXB
 
-group 'ChatCraftServer'
+group 'com.nearce'
 version '1.0-SNAPSHOT'
 
 
