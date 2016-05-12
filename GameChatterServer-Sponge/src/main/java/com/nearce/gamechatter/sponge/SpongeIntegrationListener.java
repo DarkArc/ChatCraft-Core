@@ -16,6 +16,7 @@ import org.spongepowered.api.event.achievement.GrantAchievementEvent;
 import org.spongepowered.api.event.entity.DestructEntityEvent;
 import org.spongepowered.api.event.message.MessageChannelEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
+import org.spongepowered.api.text.channel.MessageChannel;
 
 import java.util.Optional;
 
@@ -43,7 +44,7 @@ public class SpongeIntegrationListener {
 
     @Listener(order = Order.POST)
     public void onUserChat(MessageChannelEvent.Chat event) {
-        String message = event.getRawMessage().toPlain();
+        String message = event.getFormatter().getBody().toText().toPlain();
         Optional<Player> optSender= event.getCause().first(Player.class);
         if (optSender.isPresent()) {
             Player sender = optSender.get();
