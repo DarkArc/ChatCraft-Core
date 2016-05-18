@@ -251,6 +251,7 @@ public class WebSocketHandler extends WebSocketServer {
     public void clientSendPrivateMessage(ChatParticipant participant, String toName, String message) {
         JsonObject requestParams = new JsonObject();
         requestParams.addProperty("sender", participant.getName());
+        requestParams.addProperty("target", toName);
         requestParams.addProperty("message", message);
 
         JsonObject request = new JsonObject();
