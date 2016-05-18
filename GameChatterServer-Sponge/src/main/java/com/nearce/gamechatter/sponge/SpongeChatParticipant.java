@@ -7,6 +7,7 @@
 package com.nearce.gamechatter.sponge;
 
 import com.nearce.gamechatter.ChatParticipant;
+import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.channel.MessageChannel;
 
@@ -15,9 +16,9 @@ import java.util.UUID;
 public class SpongeChatParticipant extends ChatParticipant {
     private MessageChannel channel;
 
-    public SpongeChatParticipant(MessageChannel channel, UUID identifier, String name) {
+    public SpongeChatParticipant(Player player, UUID identifier, String name) {
         super(identifier, name);
-        this.channel = channel;
+        this.channel = MessageChannel.fixed(player);
     }
 
     @Override
