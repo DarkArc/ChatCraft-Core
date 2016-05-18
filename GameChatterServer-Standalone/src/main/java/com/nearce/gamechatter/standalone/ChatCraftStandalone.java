@@ -52,6 +52,11 @@ public class ChatCraftStandalone {
             public void remoteClientSendMessage(ChatMessage message) {
                 System.out.println("<" + message.getSender().getName() + "> " + message.getMessage());
             }
+
+            @Override
+            public void remoteClientSendPrivateMessage(ChatMessage message, String toName) {
+                System.out.println("[" + message.getSender().getName() + " -> " + toName + "] " + message.getMessage());
+            }
         });
 
         Thread thread = new Thread(webSocketHandler);

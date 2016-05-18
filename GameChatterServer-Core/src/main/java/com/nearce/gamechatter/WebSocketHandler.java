@@ -16,6 +16,7 @@ import org.java_websocket.server.WebSocketServer;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.*;
+import java.util.function.Predicate;
 
 public class WebSocketHandler extends WebSocketServer {
     private Map<InetSocketAddress, WebSocket> pendingSockets = new HashMap<>();
@@ -69,6 +70,9 @@ public class WebSocketHandler extends WebSocketServer {
             case "send":
                 sendMessage(address, params);
                 break;
+            case "psend":
+                sendPrivateMessage(address, params);
+                break;
         }
     }
 
@@ -76,6 +80,10 @@ public class WebSocketHandler extends WebSocketServer {
         for (RemoteChatParticipant participant : participantMap.values()) {
             participant.sendMessage(message.toString());
         }
+    }
+
+    private void sendToRemoteClientsWhere(JsonObject message, Predicate<RemoteChatParticipant> predicate) {
+        participantMap.values().stream().filter(predicate).forEach(participant -> participant.sendMessage(message.toString()));
     }
 
     private void join(InetSocketAddress address, UUID identifier, JsonObject params) {
@@ -170,6 +178,21 @@ public class WebSocketHandler extends WebSocketServer {
         }
     }
 
+    private void sendPrivateMessage(InetSocketAddress address, JsonObject params) {
+        ChatParticipant participant = participantMap.get(address);
+        if (participant != null) {
+            String user = gameServer.sanitize(params.getAsJsonPrimitive("user").getAsString()).trim();
+            String message = gameServer.sanitize(params.getAsJsonPrimitive("message").getAsString()).trim();
+            if (user.isEmpty() || message.isEmpty()) {
+                return;
+            }
+
+            clientSendPrivateMessage(participant, user, message);
+
+            gameServer.remoteClientSendPrivateMessage(new ChatMessage(participant, message), user);
+        }
+    }
+
     public void systemMessage(String message) {
         JsonObject requestParams = new JsonObject();
         requestParams.addProperty("message", message);
@@ -223,5 +246,17 @@ public class WebSocketHandler extends WebSocketServer {
         request.add("params", requestParams);
 
         sendToRemoteClients(request);
+    }
+
+    public void clientSendPrivateMessage(ChatParticipant participant, String toName, String message) {
+        JsonObject requestParams = new JsonObject();
+        requestParams.addProperty("sender", participant.getName());
+        requestParams.addProperty("message", message);
+
+        JsonObject request = new JsonObject();
+        request.addProperty("method", "send");
+        request.add("params", requestParams);
+
+        sendToRemoteClientsWhere(request, chatParticipant -> chatParticipant.getName().equals(toName));
     }
 }

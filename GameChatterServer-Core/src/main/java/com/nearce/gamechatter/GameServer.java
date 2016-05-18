@@ -22,4 +22,6 @@ public interface GameServer {
     void remoteClientLeave(ChatParticipant client);
 
     void remoteClientSendMessage(ChatMessage message);
+    void remoteClientSendPrivateMessage(ChatMessage message, String toName);
+
 }

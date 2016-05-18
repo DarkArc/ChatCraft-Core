@@ -9,6 +9,7 @@ package com.nearce.gamechatter.sponge;
 import com.nearce.gamechatter.ChatMessage;
 import com.nearce.gamechatter.ChatParticipant;
 import com.nearce.gamechatter.GameServer;
+import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
@@ -68,6 +69,16 @@ public class SpongeGameServer implements GameServer {
     @Override
     public void remoteClientSendMessage(ChatMessage message) {
         MessageChannel.TO_ALL.send(Text.of("<", message.getSender().getName(), "> ", message.getMessage()));
+    }
+
+    @Override
+    public void remoteClientSendPrivateMessage(ChatMessage message, String toName) {
+        Optional<Player> optPlayer = Sponge.getServer().getPlayer(toName);
+        if (optPlayer.isPresent()) {
+            Player player = optPlayer.get();
+            player.sendMessage(Text.of("[", message.getSender().getName(), " -> You] ", message.getMessage()));
+        }
+        MessageChannel.TO_CONSOLE.send(Text.of("[", message.getSender().getName(), " -> ", toName, "] ", message.getMessage()));
     }
 
     @Listener(order = Order.POST)
