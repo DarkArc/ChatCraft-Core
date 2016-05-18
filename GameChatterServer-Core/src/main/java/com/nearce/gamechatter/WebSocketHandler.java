@@ -18,8 +18,8 @@ import java.net.UnknownHostException;
 import java.util.*;
 
 public class WebSocketHandler extends WebSocketServer {
-    private Map<InetSocketAddress, WebSocket> activeSockets = new HashMap<>();
-    private Map<InetSocketAddress, ChatParticipant> participantMap = new HashMap<>();
+    private Map<InetSocketAddress, WebSocket> pendingSockets = new HashMap<>();
+    private Map<InetSocketAddress, RemoteChatParticipant> participantMap = new HashMap<>();
 
     private GameServer gameServer;
 
@@ -30,7 +30,7 @@ public class WebSocketHandler extends WebSocketServer {
 
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
-        activeSockets.put(conn.getRemoteSocketAddress(), conn);
+        pendingSockets.put(conn.getRemoteSocketAddress(), conn);
     }
 
     @Override
@@ -48,7 +48,7 @@ public class WebSocketHandler extends WebSocketServer {
 
     }
 
-    public Collection<ChatParticipant> getConnectedParticipants() {
+    public Collection<RemoteChatParticipant> getConnectedParticipants() {
         return participantMap.values();
     }
 
@@ -73,17 +73,19 @@ public class WebSocketHandler extends WebSocketServer {
     }
 
     private void sendToRemoteClients(JsonObject message) {
-        for (InetSocketAddress address : participantMap.keySet()) {
-            activeSockets.get(address).send(message.toString());
+        for (RemoteChatParticipant participant : participantMap.values()) {
+            participant.sendMessage(message.toString());
         }
     }
 
     private void join(InetSocketAddress address, UUID identifier, JsonObject params) {
         String requestedName = gameServer.sanitize(params.getAsJsonPrimitive("name").getAsString());
 
+        WebSocket pendingSocket = pendingSockets.remove(address);
+
         // If the name is not valid, close their connection
         if (requestedName.isEmpty()) {
-            activeSockets.remove(address).close();
+            pendingSocket.close();
             return;
         }
 
@@ -98,21 +100,24 @@ public class WebSocketHandler extends WebSocketServer {
                     request.addProperty("method", "verify");
                     request.add("params", requestParams);
 
-                    activeSockets.get(address).send(request.toString());
+                    pendingSocket.send(request.toString());
                 },
                 (name) -> {
-                    ChatParticipant participant = new ChatParticipant(identifier, name);
+                    RemoteChatParticipant participant = new RemoteChatParticipant(
+                            pendingSocket, identifier, name
+                    );
+
                     participantMap.put(address, participant);
 
                     clientJoin(participant, true);
                     gameServer.remoteClientJoin(participant);
 
-                    sendParticipants(address);
+                    sendParticipants(participant);
                 }
         );
     }
 
-    private void sendParticipants(InetSocketAddress address) {
+    private void sendParticipants(RemoteChatParticipant targetParticipant) {
         JsonObject requestParams = new JsonObject();
 
         JsonArray localParticipants = new JsonArray();
@@ -136,16 +141,18 @@ public class WebSocketHandler extends WebSocketServer {
         request.addProperty("method", "list");
         request.add("params", requestParams);
 
-        activeSockets.get(address).send(request.toString());
+        targetParticipant.sendMessage(request.toString());
     }
 
     private void leave(InetSocketAddress address, JsonObject params) {
-        if (activeSockets.remove(address) != null) {
-            ChatParticipant participant = participantMap.remove(address);
-            if (participant != null) {
-                clientLeave(participant, true);
-                gameServer.remoteClientLeave(participant);
-            }
+        if (pendingSockets.remove(address) != null) {
+            return;
+        }
+
+        ChatParticipant participant = participantMap.remove(address);
+        if (participant != null) {
+            clientLeave(participant, true);
+            gameServer.remoteClientLeave(participant);
         }
     }
 

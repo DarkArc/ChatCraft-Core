@@ -7,6 +7,7 @@
 package com.nearce.gamechatter.sponge.command;
 
 import com.nearce.gamechatter.ChatParticipant;
+import com.nearce.gamechatter.RemoteChatParticipant;
 import com.nearce.gamechatter.sponge.GameChatterPlugin;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandException;
@@ -29,7 +30,7 @@ public class GameChatterListCommand implements CommandExecutor {
         src.sendMessage(Text.of("There are ", players.size(), "/", Sponge.getServer().getMaxPlayers(), " online:"));
         src.sendMessage(Text.of(String.join(", ", players.stream().map(User::getName).collect(Collectors.toList()))));
 
-        Collection<ChatParticipant> participants = GameChatterPlugin.inst().getConnectedParticipants();
+        Collection<RemoteChatParticipant> participants = GameChatterPlugin.inst().getConnectedParticipants();
         src.sendMessage(Text.of("There are ", participants.size(), " remote chat users:"));
         src.sendMessage(Text.of(String.join(", ", participants.stream().map(ChatParticipant::getName).collect(Collectors.toList()))));
 

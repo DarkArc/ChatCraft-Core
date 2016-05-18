@@ -6,6 +6,7 @@
 
 package com.nearce.gamechatter.sponge;
 import com.nearce.gamechatter.ChatParticipant;
+import com.nearce.gamechatter.RemoteChatParticipant;
 import com.nearce.gamechatter.WebSocketHandler;
 import com.nearce.gamechatter.db.DatabaseConfigLoader;
 import com.nearce.gamechatter.sponge.command.GameChatterListCommand;
@@ -33,7 +34,7 @@ public class GameChatterPlugin {
 
     private WebSocketHandler webSocketHandler;
 
-    public Collection<ChatParticipant> getConnectedParticipants() {
+    public Collection<RemoteChatParticipant> getConnectedParticipants() {
         return webSocketHandler.getConnectedParticipants();
     }
 
