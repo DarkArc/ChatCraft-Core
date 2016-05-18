@@ -181,7 +181,7 @@ public class WebSocketHandler extends WebSocketServer {
     private void sendPrivateMessage(InetSocketAddress address, JsonObject params) {
         ChatParticipant participant = participantMap.get(address);
         if (participant != null) {
-            String user = gameServer.sanitize(params.getAsJsonPrimitive("user").getAsString()).trim();
+            String user = gameServer.sanitize(params.getAsJsonPrimitive("target").getAsString()).trim();
             String message = gameServer.sanitize(params.getAsJsonPrimitive("message").getAsString()).trim();
             if (user.isEmpty() || message.isEmpty()) {
                 return;
