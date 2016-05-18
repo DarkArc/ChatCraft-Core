@@ -90,14 +90,14 @@ public class SpongeGameServer implements GameServer {
     @Listener(order = Order.POST)
     public void onPlayerJoin(ClientConnectionEvent.Join event) {
         Player player = event.getTargetEntity();
-        ChatParticipant participant = new SpongeChatParticipant(player, player.getUniqueId(), player.getName());
+        ChatParticipant participant = new SpongeChatParticipant(player);
         participants.add(participant);
     }
 
     @Listener(order = Order.POST)
     public void onPlayerLeave(ClientConnectionEvent.Disconnect event) {
         Player player = event.getTargetEntity();
-        ChatParticipant participant = new SpongeChatParticipant(player, player.getUniqueId(), player.getName());
+        ChatParticipant participant = new SpongeChatParticipant(player);
         participants.remove(participant);
     }
 }

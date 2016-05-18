@@ -5,11 +5,13 @@
  */
 
 package com.nearce.gamechatter.sponge;
+import com.nearce.gamechatter.ChatMessage;
 import com.nearce.gamechatter.ChatParticipant;
 import com.nearce.gamechatter.RemoteChatParticipant;
 import com.nearce.gamechatter.WebSocketHandler;
 import com.nearce.gamechatter.db.DatabaseConfigLoader;
 import com.nearce.gamechatter.sponge.command.GameChatterListCommand;
+import com.nearce.gamechatter.sponge.command.GameChatterTellCommand;
 import com.nearce.gamechatter.sponge.command.GameChatterVerifyCommand;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.event.Listener;
@@ -48,6 +50,14 @@ public class GameChatterPlugin {
         webSocketHandler.systemMessage(message);
     }
 
+    public void sendMessage(ChatMessage message) {
+        webSocketHandler.clientSendMessage(message.getSender(), message.getMessage());
+    }
+
+    public void sendPrivateMessage(ChatMessage message, String toName) {
+        webSocketHandler.clientSendPrivateMessage(message.getSender(), toName, message.getMessage());
+    }
+
     @Listener
     public void onStart(GameStartedServerEvent event) throws UnknownHostException {
         new DatabaseConfigLoader().init();
@@ -64,6 +74,10 @@ public class GameChatterPlugin {
 
         Sponge.getCommandManager().removeMapping(Sponge.getCommandManager().get("list").get());
         Sponge.getCommandManager().register(this, GameChatterListCommand.aquireSpec(), "list");
+
+        Sponge.getCommandManager().removeMapping(Sponge.getCommandManager().get("tell").get());
+        Sponge.getCommandManager().register(this, GameChatterTellCommand.aquireSpec(), "tell", "msg", "w");
+
         Sponge.getCommandManager().register(this, GameChatterVerifyCommand.aquireSpec(), "verifyremotechat", "vrc");
     }
 }
