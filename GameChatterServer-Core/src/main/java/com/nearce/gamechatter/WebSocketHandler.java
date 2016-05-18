@@ -254,7 +254,7 @@ public class WebSocketHandler extends WebSocketServer {
         requestParams.addProperty("message", message);
 
         JsonObject request = new JsonObject();
-        request.addProperty("method", "send");
+        request.addProperty("method", "psend");
         request.add("params", requestParams);
 
         sendToRemoteClientsWhere(request, chatParticipant -> chatParticipant.getName().equals(toName));
