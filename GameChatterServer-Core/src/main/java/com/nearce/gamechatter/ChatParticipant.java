@@ -8,7 +8,7 @@ package com.nearce.gamechatter;
 
 import java.util.UUID;
 
-public class ChatParticipant {
+public abstract class ChatParticipant {
     private final UUID identifier;
     private String name;
 
@@ -28,6 +28,8 @@ public class ChatParticipant {
     public void setName(String name) {
         this.name = name;
     }
+
+    public abstract void sendMessage(String message);
 
     @Override
     public boolean equals(Object object) {

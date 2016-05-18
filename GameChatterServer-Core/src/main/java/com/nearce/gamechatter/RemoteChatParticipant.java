@@ -18,6 +18,7 @@ public class RemoteChatParticipant extends ChatParticipant {
         this.socket = socket;
     }
 
+    @Override
     public void sendMessage(String message) {
         socket.send(message);
     }

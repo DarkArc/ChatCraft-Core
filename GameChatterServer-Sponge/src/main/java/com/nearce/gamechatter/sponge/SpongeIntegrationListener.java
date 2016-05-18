@@ -31,14 +31,14 @@ public class SpongeIntegrationListener {
     @Listener(order = Order.POST)
     public void onPlayerJoin(ClientConnectionEvent.Join event) {
         Player player = event.getTargetEntity();
-        ChatParticipant participant = new ChatParticipant(player.getUniqueId(), player.getName());
+        ChatParticipant participant = new SpongeChatParticipant(player.getMessageChannel(), player.getUniqueId(), player.getName());
         webSocketHandler.clientJoin(participant);
     }
 
     @Listener(order = Order.POST)
     public void onPlayerLeave(ClientConnectionEvent.Disconnect event) {
         Player player = event.getTargetEntity();
-        ChatParticipant participant = new ChatParticipant(player.getUniqueId(), player.getName());
+        ChatParticipant participant = new SpongeChatParticipant(player.getMessageChannel(), player.getUniqueId(), player.getName());
         webSocketHandler.clientLeave(participant);
     }
 
@@ -48,7 +48,7 @@ public class SpongeIntegrationListener {
         Optional<Player> optSender= event.getCause().first(Player.class);
         if (optSender.isPresent()) {
             Player sender = optSender.get();
-            ChatParticipant participant = new ChatParticipant(sender.getUniqueId(), sender.getName());
+            ChatParticipant participant = new SpongeChatParticipant(sender.getMessageChannel(), sender.getUniqueId(), sender.getName());
             webSocketHandler.clientSendMessage(participant, message);
         }
     }

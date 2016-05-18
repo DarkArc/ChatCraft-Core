@@ -258,6 +258,11 @@ public class WebSocketHandler extends WebSocketServer {
         request.addProperty("method", "psend");
         request.add("params", requestParams);
 
-        sendToRemoteClientsWhere(request, chatParticipant -> chatParticipant.getName().equals(toName));
+        sendToRemoteClientsWhere(request, targetParticipant -> {
+            String participantName = targetParticipant.getName();
+            boolean isFrom = participantName.equals(participant.getName());
+            boolean isTo = participantName.equals(toName);
+            return isFrom || isTo;
+        });
     }
 }

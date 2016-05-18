@@ -73,25 +73,31 @@ public class SpongeGameServer implements GameServer {
 
     @Override
     public void remoteClientSendPrivateMessage(ChatMessage message, String toName) {
-        Optional<Player> optPlayer = Sponge.getServer().getPlayer(toName);
-        if (optPlayer.isPresent()) {
-            Player player = optPlayer.get();
-            player.sendMessage(Text.of("[", message.getSender().getName(), " -> You] ", message.getMessage()));
+        for (ChatParticipant participant : getLocalParticipants()) {
+            boolean isFrom = participant.getName().equals(message.getSender().getName());
+            boolean isTo = participant.getName().equals(toName);
+
+            if (isFrom) {
+                participant.sendMessage("[You -> " + toName + "] " + message.getMessage());
+            } else if (isTo) {
+                participant.sendMessage("[" + message.getSender().getName() + " -> You] " + message.getMessage());
+            }
         }
+
         MessageChannel.TO_CONSOLE.send(Text.of("[", message.getSender().getName(), " -> ", toName, "] ", message.getMessage()));
     }
 
     @Listener(order = Order.POST)
     public void onPlayerJoin(ClientConnectionEvent.Join event) {
         Player player = event.getTargetEntity();
-        ChatParticipant participant = new ChatParticipant(player.getUniqueId(), player.getName());
+        ChatParticipant participant = new SpongeChatParticipant(player.getMessageChannel(), player.getUniqueId(), player.getName());
         participants.add(participant);
     }
 
     @Listener(order = Order.POST)
     public void onPlayerLeave(ClientConnectionEvent.Disconnect event) {
         Player player = event.getTargetEntity();
-        ChatParticipant participant = new ChatParticipant(player.getUniqueId(), player.getName());
+        ChatParticipant participant = new SpongeChatParticipant(player.getMessageChannel(), player.getUniqueId(), player.getName());
         participants.remove(participant);
     }
 }
