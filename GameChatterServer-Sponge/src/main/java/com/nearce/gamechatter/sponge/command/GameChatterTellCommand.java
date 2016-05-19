@@ -52,8 +52,8 @@ public class GameChatterTellCommand implements CommandExecutor {
             return CommandResult.empty();
         }
 
+        GameChatterPlugin.inst().getGameServer().remoteClientSendPrivateMessage(message, toName);
         GameChatterPlugin.inst().sendPrivateMessage(message, toName);
-        sourceParticipant.sendMessage("[You -> " + toName + "] " + message.getMessage());
 
         return CommandResult.success();
     }
