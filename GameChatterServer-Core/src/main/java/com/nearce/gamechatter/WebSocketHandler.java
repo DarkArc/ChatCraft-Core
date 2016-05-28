@@ -6,9 +6,12 @@
 
 package com.nearce.gamechatter;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
+import com.nearce.gamechatter.method.outgoing.OutMethod;
+import com.nearce.gamechatter.method.incoming.InJoin;
+import com.nearce.gamechatter.method.incoming.InMessage;
+import com.nearce.gamechatter.method.incoming.InPrivateMessage;
+import com.nearce.gamechatter.method.outgoing.*;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
@@ -17,10 +20,11 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class WebSocketHandler extends WebSocketServer {
     private Map<InetSocketAddress, WebSocket> pendingSockets = new HashMap<>();
-    private Map<InetSocketAddress, RemoteChatParticipant> participantMap = new HashMap<>();
+    private Map<InetSocketAddress, RemoteChatUser> participantMap = new HashMap<>();
 
     private GameServer gameServer;
 
@@ -49,8 +53,8 @@ public class WebSocketHandler extends WebSocketServer {
 
     }
 
-    public Collection<RemoteChatParticipant> getConnectedParticipants() {
-        return participantMap.values();
+    public Collection<ChatParticipant> getConnectedParticipants() {
+        return participantMap.values().stream().map(RemoteChatUser::getParticipant).collect(Collectors.toList());
     }
 
     private void process(InetSocketAddress address, String message) {
@@ -76,18 +80,30 @@ public class WebSocketHandler extends WebSocketServer {
         }
     }
 
-    private void sendToRemoteClients(JsonObject message) {
-        for (RemoteChatParticipant participant : participantMap.values()) {
-            participant.sendMessage(message.toString());
+    private void sendToSocket(WebSocket socket, OutMethod request) {
+        String renderedRequest = new Gson().toJson(request);
+        sendToSocket(socket, renderedRequest);
+    }
+
+    private void sendToSocket(WebSocket socket, String renderedRequest) {
+        socket.send(renderedRequest);
+    }
+
+    private void sendToRemoteClients(OutMethod request) {
+        String renderedRequest = new Gson().toJson(request);
+        for (RemoteChatUser user : participantMap.values()) {
+            sendToSocket(user.getSocket(), renderedRequest);
         }
     }
 
-    private void sendToRemoteClientsWhere(JsonObject message, Predicate<RemoteChatParticipant> predicate) {
-        participantMap.values().stream().filter(predicate).forEach(participant -> participant.sendMessage(message.toString()));
+    private void sendToRemoteClientsWhere(OutMethod request, Predicate<RemoteChatUser> predicate) {
+        String renderedRequest = new Gson().toJson(request);
+        participantMap.values().stream().filter(predicate).forEach(user -> sendToSocket(user.getSocket(), renderedRequest));
     }
 
     private void join(InetSocketAddress address, UUID identifier, JsonObject params) {
-        String requestedName = gameServer.sanitize(params.getAsJsonPrimitive("name").getAsString());
+        InJoin joinRequest = new Gson().fromJson(params, InJoin.class);
+        String requestedName = gameServer.sanitize(joinRequest.getName());
 
         WebSocket pendingSocket = pendingSockets.remove(address);
 
@@ -100,56 +116,25 @@ public class WebSocketHandler extends WebSocketServer {
         gameServer.joinWhenLegal(
                 requestedName,
                 identifier,
-                (code) -> {
-                    JsonObject requestParams = new JsonObject();
-                    requestParams.addProperty("code", code);
-
-                    JsonObject request = new JsonObject();
-                    request.addProperty("method", "verify");
-                    request.add("params", requestParams);
-
-                    pendingSocket.send(request.toString());
-                },
+                (code) -> sendToSocket(pendingSocket, OutVerificationCode.getRequest(code)),
                 (name) -> {
-                    RemoteChatParticipant participant = new RemoteChatParticipant(
-                            pendingSocket, identifier, name
+                    ChatParticipant participant = new ChatParticipant(name);
+                    RemoteChatUser user = new RemoteChatUser(
+                            pendingSocket, participant
                     );
 
-                    participantMap.put(address, participant);
+                    participantMap.put(address, user);
 
-                    clientJoin(participant, true);
-                    gameServer.remoteClientJoin(participant);
+                    clientJoinToRemote(participant, true);
+                    gameServer.clientJoinToLocal(participant);
 
-                    sendParticipants(participant);
+                    sendParticipants(user);
                 }
         );
     }
 
-    private void sendParticipants(RemoteChatParticipant targetParticipant) {
-        JsonObject requestParams = new JsonObject();
-
-        JsonArray localParticipants = new JsonArray();
-        gameServer.getLocalParticipants().stream().forEach(p -> {
-            JsonObject participant = new JsonObject();
-            participant.addProperty("name", p.getName());
-            localParticipants.add(participant);
-        });
-
-        JsonArray remoteParticipants = new JsonArray();
-        getConnectedParticipants().stream().forEach(p -> {
-            JsonObject participant = new JsonObject();
-            participant.addProperty("name", p.getName());
-            remoteParticipants.add(participant);
-        });
-
-        requestParams.add("server", localParticipants);
-        requestParams.add("remote", remoteParticipants);
-
-        JsonObject request = new JsonObject();
-        request.addProperty("method", "list");
-        request.add("params", requestParams);
-
-        targetParticipant.sendMessage(request.toString());
+    private void sendParticipants(RemoteChatUser targetParticipant) {
+        sendToSocket(targetParticipant.getSocket(), OutParticipantList.getRequest(gameServer.getLocalParticipants(), getConnectedParticipants()));
     }
 
     private void leave(InetSocketAddress address, JsonObject params) {
@@ -157,112 +142,80 @@ public class WebSocketHandler extends WebSocketServer {
             return;
         }
 
-        ChatParticipant participant = participantMap.remove(address);
-        if (participant != null) {
-            clientLeave(participant, true);
-            gameServer.remoteClientLeave(participant);
+        RemoteChatUser user = participantMap.remove(address);
+        if (user != null) {
+            ChatParticipant participant = user.getParticipant();
+            clientLeaveToRemote(participant, true);
+            gameServer.clientLeaveToLocal(participant);
         }
     }
 
     private void sendMessage(InetSocketAddress address, JsonObject params) {
-        ChatParticipant participant = participantMap.get(address);
-        if (participant != null) {
-            String message = gameServer.sanitize(params.getAsJsonPrimitive("message").getAsString()).trim();
+        RemoteChatUser user = participantMap.get(address);
+        if (user != null) {
+            ChatParticipant participant = user.getParticipant();
+
+            InMessage messageRequest = new Gson().fromJson(params, InMessage.class);
+            String message = gameServer.sanitize(messageRequest.getMessage()).trim();
             if (message.isEmpty()) {
                 return;
             }
 
-            clientSendMessage(participant, message);
+            clientMessageToRemote(participant, message);
 
-            gameServer.remoteClientSendMessage(new ChatMessage(participant, message));
+            gameServer.clientMessageToLocal(new ChatMessage(participant, message));
         }
     }
 
     private void sendPrivateMessage(InetSocketAddress address, JsonObject params) {
-        ChatParticipant participant = participantMap.get(address);
-        if (participant != null) {
-            String user = gameServer.sanitize(params.getAsJsonPrimitive("target").getAsString()).trim();
-            String message = gameServer.sanitize(params.getAsJsonPrimitive("message").getAsString()).trim();
-            if (user.isEmpty() || message.isEmpty()) {
+        RemoteChatUser user = participantMap.get(address);
+        if (user != null) {
+            InPrivateMessage privateMessage = new Gson().fromJson(params, InPrivateMessage.class);
+            String target = gameServer.sanitize(privateMessage.getTarget()).trim();
+            String message = gameServer.sanitize(privateMessage.getMessage()).trim();
+            if (target.isEmpty() || message.isEmpty()) {
                 return;
             }
 
-            clientSendPrivateMessage(participant, user, message);
+            clientPrivateMessageToRemote(user.getParticipant(), target, message);
 
-            gameServer.remoteClientSendPrivateMessage(new ChatMessage(participant, message), user);
+            gameServer.clientPrivateMessageToLocal(new ChatMessage(user.getParticipant(), message), target);
         }
     }
 
-    public void systemMessage(String message) {
-        JsonObject requestParams = new JsonObject();
-        requestParams.addProperty("message", message);
-
-        JsonObject request = new JsonObject();
-        request.addProperty("method", "ssend");
-        request.add("params", requestParams);
-
-        sendToRemoteClients(request);
+    public void systemMessageToRemote(String message) {
+        sendToRemoteClients(OutSystemMessage.getRequest(message));
     }
 
-    public void clientJoin(ChatParticipant participant) {
-        clientJoin(participant, false);
+    public void clientJoinToRemote(ChatParticipant participant) {
+        clientJoinToRemote(participant, false);
     }
 
-    private void clientJoin(ChatParticipant participant, boolean remote) {
-        JsonObject requestParams = new JsonObject();
-        requestParams.addProperty("name", participant.getName());
-        requestParams.addProperty("remote", remote);
-
-        JsonObject request = new JsonObject();
-        request.addProperty("method", "join");
-        request.add("params", requestParams);
-
-        sendToRemoteClients(request);
+    private void clientJoinToRemote(ChatParticipant participant, boolean remote) {
+        sendToRemoteClients(OutJoin.getRequest(participant.getName(), remote));
     }
 
-    public void clientLeave(ChatParticipant participant) {
-        clientLeave(participant, false);
+    public void clientLeaveToRemote(ChatParticipant participant) {
+        clientLeaveToRemote(participant, false);
     }
 
-    private void clientLeave(ChatParticipant participant, boolean remote) {
-        JsonObject requestParams = new JsonObject();
-        requestParams.addProperty("name", participant.getName());
-        requestParams.addProperty("remote", remote);
-
-        JsonObject request = new JsonObject();
-        request.addProperty("method", "leave");
-        request.add("params", requestParams);
-
-        sendToRemoteClients(request);
+    private void clientLeaveToRemote(ChatParticipant participant, boolean remote) {
+        sendToRemoteClients(OutLeave.getRequest(participant.getName(), remote));
     }
 
-    public void clientSendMessage(ChatParticipant participant, String message) {
-        JsonObject requestParams = new JsonObject();
-        requestParams.addProperty("sender", participant.getName());
-        requestParams.addProperty("message", message);
-
-        JsonObject request = new JsonObject();
-        request.addProperty("method", "send");
-        request.add("params", requestParams);
-
-        sendToRemoteClients(request);
+    public void clientMessageToRemote(ChatParticipant participant, String message) {
+        sendToRemoteClients(OutMessage.getRequest(participant.getName(), message));
     }
 
-    public void clientSendPrivateMessage(ChatParticipant participant, String toName, String message) {
-        JsonObject requestParams = new JsonObject();
-        requestParams.addProperty("sender", participant.getName());
-        requestParams.addProperty("target", toName);
-        requestParams.addProperty("message", message);
-
-        JsonObject request = new JsonObject();
-        request.addProperty("method", "psend");
-        request.add("params", requestParams);
-
-        sendToRemoteClientsWhere(request, targetParticipant -> {
-            String participantName = targetParticipant.getName();
-            boolean isFrom = participantName.equals(participant.getName());
-            boolean isTo = participantName.equals(toName);
-            return isFrom || isTo;
-        });
+    public void clientPrivateMessageToRemote(ChatParticipant participant, String toName, String message) {
+        sendToRemoteClientsWhere(
+                OutPrivateMessage.getRequest(participant.getName(), toName, message),
+                user -> {
+                    String participantName = user.getParticipant().getName();
+                    boolean isFrom = participantName.equals(participant.getName());
+                    boolean isTo = participantName.equals(toName);
+                    return isFrom || isTo;
+                }
+        );
     }
 }

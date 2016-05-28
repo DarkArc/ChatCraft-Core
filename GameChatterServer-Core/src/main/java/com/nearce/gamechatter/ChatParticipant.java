@@ -6,19 +6,11 @@
 
 package com.nearce.gamechatter;
 
-import java.util.UUID;
-
-public abstract class ChatParticipant {
-    private final UUID identifier;
+public final class ChatParticipant {
     private String name;
 
-    public ChatParticipant(UUID identifier, String name) {
-        this.identifier = identifier;
+    public ChatParticipant(String name) {
         this.name = name;
-    }
-
-    public UUID getUniqueId() {
-        return identifier;
     }
 
     public String getName() {
@@ -29,10 +21,8 @@ public abstract class ChatParticipant {
         this.name = name;
     }
 
-    public abstract void sendMessage(String message);
-
     @Override
     public boolean equals(Object object) {
-        return object instanceof ChatParticipant && ((ChatParticipant) object).getUniqueId().equals(getUniqueId());
+        return object instanceof ChatParticipant && ((ChatParticipant) object).getName().equals(getName());
     }
 }

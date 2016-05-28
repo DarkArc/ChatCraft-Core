@@ -16,7 +16,6 @@ import org.spongepowered.api.event.achievement.GrantAchievementEvent;
 import org.spongepowered.api.event.entity.DestructEntityEvent;
 import org.spongepowered.api.event.message.MessageChannelEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
-import org.spongepowered.api.text.channel.MessageChannel;
 
 import java.util.Optional;
 
@@ -31,15 +30,13 @@ public class SpongeIntegrationListener {
     @Listener(order = Order.POST)
     public void onPlayerJoin(ClientConnectionEvent.Join event) {
         Player player = event.getTargetEntity();
-        ChatParticipant participant = new SpongeChatParticipant(player);
-        webSocketHandler.clientJoin(participant);
+        webSocketHandler.clientJoinToRemote(new ChatParticipant(player.getName()));
     }
 
     @Listener(order = Order.POST)
     public void onPlayerLeave(ClientConnectionEvent.Disconnect event) {
         Player player = event.getTargetEntity();
-        ChatParticipant participant = new SpongeChatParticipant(player);
-        webSocketHandler.clientLeave(participant);
+        webSocketHandler.clientLeaveToRemote(new ChatParticipant(player.getName()));
     }
 
     @Listener(order = Order.POST)
@@ -48,8 +45,7 @@ public class SpongeIntegrationListener {
         Optional<Player> optSender= event.getCause().first(Player.class);
         if (optSender.isPresent()) {
             Player sender = optSender.get();
-            ChatParticipant participant = new SpongeChatParticipant(sender);
-            webSocketHandler.clientSendMessage(participant, message);
+            webSocketHandler.clientMessageToRemote(new ChatParticipant(sender.getName()), message);
         }
     }
 
@@ -57,13 +53,13 @@ public class SpongeIntegrationListener {
     public void onUserDeath(DestructEntityEvent.Death event) {
         Living target = event.getTargetEntity();
         if (target instanceof Player) {
-            webSocketHandler.systemMessage(event.getMessage().toPlain());
+            webSocketHandler.systemMessageToRemote(event.getMessage().toPlain());
         }
     }
 
     @Listener(order = Order.POST)
     public void onAchievementGrant(GrantAchievementEvent.TargetPlayer event) {
-        webSocketHandler.systemMessage(event.getMessage().toPlain());
+        webSocketHandler.systemMessageToRemote(event.getMessage().toPlain());
     }
 
 }

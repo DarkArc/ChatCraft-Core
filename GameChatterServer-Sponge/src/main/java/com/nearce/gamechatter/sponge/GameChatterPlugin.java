@@ -7,7 +7,7 @@
 package com.nearce.gamechatter.sponge;
 import com.nearce.gamechatter.ChatMessage;
 import com.nearce.gamechatter.ChatParticipant;
-import com.nearce.gamechatter.RemoteChatParticipant;
+import com.nearce.gamechatter.RemoteChatUser;
 import com.nearce.gamechatter.WebSocketHandler;
 import com.nearce.gamechatter.db.DatabaseConfigLoader;
 import com.nearce.gamechatter.sponge.command.GameChatterListCommand;
@@ -17,7 +17,6 @@ import org.spongepowered.api.Sponge;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.plugin.Plugin;
-import org.spongepowered.api.text.Text;
 
 import java.net.UnknownHostException;
 import java.util.Collection;
@@ -36,7 +35,7 @@ public class GameChatterPlugin {
 
     private WebSocketHandler webSocketHandler;
 
-    public Collection<RemoteChatParticipant> getConnectedParticipants() {
+    public Collection<ChatParticipant> getConnectedParticipants() {
         return webSocketHandler.getConnectedParticipants();
     }
 
@@ -47,15 +46,15 @@ public class GameChatterPlugin {
     }
 
     public void sendSystemMessage(String message) {
-        webSocketHandler.systemMessage(message);
+        webSocketHandler.systemMessageToRemote(message);
     }
 
     public void sendMessage(ChatMessage message) {
-        webSocketHandler.clientSendMessage(message.getSender(), message.getMessage());
+        webSocketHandler.clientMessageToRemote(message.getSender(), message.getMessage());
     }
 
     public void sendPrivateMessage(ChatMessage message, String toName) {
-        webSocketHandler.clientSendPrivateMessage(message.getSender(), toName, message.getMessage());
+        webSocketHandler.clientPrivateMessageToRemote(message.getSender(), toName, message.getMessage());
     }
 
     @Listener

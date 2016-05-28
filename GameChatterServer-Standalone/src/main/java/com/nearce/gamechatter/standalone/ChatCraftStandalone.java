@@ -39,22 +39,22 @@ public class ChatCraftStandalone {
             }
 
             @Override
-            public void remoteClientJoin(ChatParticipant client) {
+            public void clientJoinToLocal(ChatParticipant client) {
                 System.out.println(client.getName() + " has joined remote chat");
             }
 
             @Override
-            public void remoteClientLeave(ChatParticipant client) {
+            public void clientLeaveToLocal(ChatParticipant client) {
                 System.out.println(client.getName() + " has left remote chat");
             }
 
             @Override
-            public void remoteClientSendMessage(ChatMessage message) {
+            public void clientMessageToLocal(ChatMessage message) {
                 System.out.println("<" + message.getSender().getName() + "> " + message.getMessage());
             }
 
             @Override
-            public void remoteClientSendPrivateMessage(ChatMessage message, String toName) {
+            public void clientPrivateMessageToLocal(ChatMessage message, String toName) {
                 System.out.println("[" + message.getSender().getName() + " -> " + toName + "] " + message.getMessage());
             }
         });

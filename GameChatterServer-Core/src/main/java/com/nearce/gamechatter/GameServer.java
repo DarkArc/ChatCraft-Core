@@ -17,11 +17,11 @@ public interface GameServer {
 
     void joinWhenLegal(String name, UUID clientID, Consumer<String> verification, Consumer<String> join);
 
-    void remoteClientJoin(ChatParticipant client);
+    void clientJoinToLocal(ChatParticipant client);
 
-    void remoteClientLeave(ChatParticipant client);
+    void clientLeaveToLocal(ChatParticipant client);
 
-    void remoteClientSendMessage(ChatMessage message);
-    void remoteClientSendPrivateMessage(ChatMessage message, String toName);
+    void clientMessageToLocal(ChatMessage message);
+    void clientPrivateMessageToLocal(ChatMessage message, String toName);
 
 }

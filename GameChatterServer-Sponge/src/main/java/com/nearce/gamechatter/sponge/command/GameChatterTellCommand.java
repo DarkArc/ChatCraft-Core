@@ -8,21 +8,17 @@ package com.nearce.gamechatter.sponge.command;
 
 import com.nearce.gamechatter.ChatMessage;
 import com.nearce.gamechatter.ChatParticipant;
-import com.nearce.gamechatter.RemoteChatParticipant;
+import com.nearce.gamechatter.RemoteChatUser;
 import com.nearce.gamechatter.sponge.GameChatterPlugin;
-import com.nearce.gamechatter.sponge.SpongeChatParticipant;
-import org.spongepowered.api.CatalogType;
-import org.spongepowered.api.Sponge;
+import com.nearce.gamechatter.sponge.SpongeChatUser;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
-import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.command.args.PatternMatchingCommandElement;
 import org.spongepowered.api.command.spec.CommandExecutor;
 import org.spongepowered.api.command.spec.CommandSpec;
 import org.spongepowered.api.entity.living.player.Player;
-import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.format.TextColors;
 
@@ -37,22 +33,24 @@ public class GameChatterTellCommand implements CommandExecutor {
     @Override
     public CommandResult execute(CommandSource src, CommandContext args) throws CommandException {
 
-        ChatParticipant sourceParticipant;
+        SpongeChatUser user;
         if (src instanceof Player) {
-            sourceParticipant = new SpongeChatParticipant((Player) src);
+            user = new SpongeChatUser((Player) src);
         } else {
-            sourceParticipant = new SpongeChatParticipant(src);
+            user = new SpongeChatUser(src);
         }
 
-        ChatMessage message = new ChatMessage(sourceParticipant, args.<String>getOne("message").get());
+        ChatParticipant participant = user.getParticipant();
+
+        ChatMessage message = new ChatMessage(participant, args.<String>getOne("message").get());
         String toName = args.<String>getOne("target").get();
 
-        if (toName.equals(sourceParticipant.getName())) {
+        if (toName.equals(participant.getName())) {
             src.sendMessage(Text.of(TextColors.RED, "You can't send a private message to yourself!"));
             return CommandResult.empty();
         }
 
-        GameChatterPlugin.inst().getGameServer().remoteClientSendPrivateMessage(message, toName);
+        GameChatterPlugin.inst().getGameServer().clientPrivateMessageToLocal(message, toName);
         GameChatterPlugin.inst().sendPrivateMessage(message, toName);
 
         return CommandResult.success();
@@ -65,7 +63,7 @@ public class GameChatterTellCommand implements CommandExecutor {
 
         private List<ChatParticipant> getAllParticipants() {
             List<ChatParticipant> players = GameChatterPlugin.inst().getGameServer().getLocalParticipants();
-            Collection<RemoteChatParticipant> participants = GameChatterPlugin.inst().getConnectedParticipants();
+            Collection<ChatParticipant> participants = GameChatterPlugin.inst().getConnectedParticipants();
 
             players.addAll(participants);
 

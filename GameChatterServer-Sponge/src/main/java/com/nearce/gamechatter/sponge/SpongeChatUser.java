@@ -15,21 +15,25 @@ import org.spongepowered.api.text.channel.MessageChannel;
 
 import java.util.UUID;
 
-public class SpongeChatParticipant extends ChatParticipant {
-    private MessageChannel channel;
+public class SpongeChatUser {
+    private final ChatParticipant participant;
+    private final MessageChannel channel;
 
-    public SpongeChatParticipant(Player player) {
-        super(player.getUniqueId(), player.getName());
+    public SpongeChatUser(Player player) {
+        participant = new ChatParticipant(player.getName());
         this.channel = MessageChannel.fixed(player);
     }
 
-    public SpongeChatParticipant(CommandSource abstractSource) {
-        super(UUID.randomUUID(), abstractSource.getName());
+    public SpongeChatUser(CommandSource abstractSource) {
+        participant = new ChatParticipant(abstractSource.getName());
         this.channel = MessageChannel.fixed(abstractSource);
     }
 
-    @Override
-    public void sendMessage(String message) {
-        channel.send(Text.of(message));
+    public ChatParticipant getParticipant() {
+        return participant;
+    }
+
+    public MessageChannel getChannel() {
+        return channel;
     }
 }
