@@ -30,5 +30,6 @@ public class OutMethod {
 
     public OutMethod(String method, Object params) {
         this.method = method;
+        this.params = params;
     }
 }
