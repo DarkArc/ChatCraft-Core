@@ -36,4 +36,9 @@ public class SpongeChatUser {
     public MessageChannel getChannel() {
         return channel;
     }
+
+    @Override
+    public boolean equals(Object object) {
+        return object instanceof SpongeChatUser && ((SpongeChatUser) object).getParticipant().equals(participant);
+    }
 }
